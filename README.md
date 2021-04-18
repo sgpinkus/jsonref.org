@@ -6,7 +6,7 @@ This specification defines JSON Reference (or JsonRef) v0.4.0. JSON Reference v0
 JSON Reference is a way to encode references in [JSON][json] documents. Conceptually, JSON Reference dereferencers extend pure JSON decoders by parsing any JSON reference (`$ref`) occurrences to native language dependent reference types.
 
 ## SPECIFICATION
-Every valid JSON Reference document is a valid JSON document. JSON Reference makes use of two special object properties meaningful to JSON Reference, but not meaningful to JSON: `$ref` and `$id`. They work as described in the following sub-sections.
+Every valid JSON Reference document is a valid JSON document. JSON Reference makes use of four special object properties meaningful to JSON Reference, but not meaningful to JSON: `$ref`, `$id` and optionally `$refProp`, `$idProp`:
 
 ### $id
 
@@ -23,10 +23,48 @@ Every valid JSON Reference document is a valid JSON document. JSON Reference mak
   - All other properties of an object containing a `$ref` key *are ignored*.
   - `<URI>` must be a valid [URI][uri]. Implementations must attempt to resolve the `<URI>` to a *replacement-value* as described below.
   - The fragment component of `<URI>` must be: empty, a valid `$id` property value, or a valid [JSON Pointer][json-pointer].
-  - If `<URI>` consists *only* of a fragment identifier component it must be resolved against the current document. The *replacement-value* is the object with a matching `$id` property, or the value pointed to via the JSON Pointer in the case that the fragment is a valid JSON Pointer (pointers a syntactically disjoint from valid `$id` property values so there is no ambiguity).
-  - If `<URI>` is not just a fragment identifier component, implementations should first resolve relative URIs against a base URI as described in [RFC 3986][uri], then use the value identified by the absolute URI as the *replacement-value*. How the base URI is determined is beyond the scope of this specification.
+  - If `<URI>` consists *only* of a fragment identifier component (example: "#frag"):
+    - If the identifier starts with "/" the entire identifier is a JSON Pointer. The *replacement-value* is the value pointed to by the JSON pointer from th root of the given document.
+    - Else the characters before the first "/" refer to the object in the current document with the matching `$id` and the remaining characters (if any) are a JSON Pointer that should be resolved relative to this object.
+    - Example:
+
+      {
+        "a": { "$id": "x", "b": 1 },
+        "b": 2,
+        "c": { "$ref": "#x/b" },
+        "d": { "$ref": "#/b" }
+      }
+
+      should give the following after dereferencing:
+
+      {
+        "a": { "$id": "a", "b": 1 },
+        "b": 2,
+        "c": 1
+        "d": 2
+      }
+
+  - If `<URI>` is not just a fragment identifier component (example: "/some/path#frag"), implementations should first resolve relative URIs against a base URI as described in [RFC 3986][uri], then use the value identified by the absolute URI as the *replacement-value*. How the base URI is determined is beyond the scope of this specification.
   - Implementations must NOT attempt to load remote resources or any resource outside the current JSON document scope by default. In general, implementations should make it clear how and where external values may be retrieved from and require the client to explicitly enable or configure this behavior.
   - If a loaded resource refers to all or part of a JSON document, that JSON document must be processed as a standalone document as described above, and NOT considered part of, or substituted into, the referring source JSON document.
+
+### $idProp, $refProp
+
+    - *Optionally* allow for a different property names other than the default "$id", and "$ref" to be used.
+    - Must be set on the JSON document root.
+    - If not set, the default "$id" and "$ref" are used.
+    - Example:
+
+      {
+        "$idProp": "$id.f4f06763-8133-4c80-a57c-2d11ea479b7d",
+        "$refProp": "$ref.c84b3603-ad3a-4358-b42c-671c7efcc6fa",
+        "a": {
+          "$id.4f06763-8133-4c80-a57c-2d11ea479b7d": "a",
+          "foo": "bah",
+          "...": "..."
+        },
+        "b": { "a": { "$ref.c84b3603-ad3a-4358-b42c-671c7efcc6fa": "#a" } }
+      }
 
 ### references and replacement-values
 
