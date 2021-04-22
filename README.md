@@ -2,26 +2,41 @@
 
 <!-- MDTOC maxdepth:6 firsth1:2 numbering:0 flatten:0 bullets:1 updateOnSave:1 -->
 
-- [OVERVIEW](#overview)   
-- [SPECIFICATION](#specification)   
-   - [$id](#id)   
-   - [$ref](#ref)   
-   - [$idProp, $refProp](#idprop-refprop)   
-   - [references and replacement-values](#references-and-replacement-values)   
-   - [lazy dereferencing](#lazy-dereferencing)   
-   - [encoding native references as JSON Reference compatible JSON](#encoding-native-references-as-json-reference-compatible-json)   
-- [WHAT JSON REFERENCE IS NOT](#what-json-reference-is-not)   
-- [JSON SCHEMA STYLE JSON REFERENCE CONFORMANCE](#json-schema-style-json-reference-conformance)   
-- [NOTES FOR JSON REFERENCE v0.4.0 IMPLEMENTORS](#notes-for-json-reference-v040-implementors)   
-   - [$id pointers](#id-pointers)   
-   - [pointers to pointers](#pointers-to-pointers)   
-   - [pointers that point *through* other pointers](#pointers-that-point-through-other-pointers)   
-   - [refs to non-structural types](#refs-to-non-structural-types)   
+- [OVERVIEW](#overview)
+- [SPECIFICATION](#specification)
+   - [$id](#id)
+   - [$ref](#ref)
+   - [$idProp, $refProp](#idprop-refprop)
+   - [References and replacement-values](#references-and-replacement-values)
+   - [Lazy dereferencing](#lazy-dereferencing)
+   - [Encoding native references as JSON Reference compatible JSON](#encoding-native-references-as-json-reference-compatible-json)
+- [WHAT JSON REFERENCE IS NOT](#what-json-reference-is-not)
+- [JSON SCHEMA STYLE JSON REFERENCE CONFORMANCE](#json-schema-style-json-reference-conformance)
+- [NOTES FOR JSON REFERENCE v0.4.0 IMPLEMENTORS](#notes-for-json-reference-v040-implementors)
+   - [$id pointers](#id-pointers)
+   - [Pointers to pointers](#pointers-to-pointers)
+   - [Pointers that point *through* other pointers](#pointers-that-point-through-other-pointers)
+   - [Refs to non-structural types](#refs-to-non-structural-types)
 
 <!-- /MDTOC -->
 
 ## OVERVIEW
-[JSON][json] alone, can only capture tree structured objects. JSON Reference is a standard way to encode references in JSON documents, to allow graph structured objects to be stored as JSON. Conceptually, JSON Reference extends pure JSON decoders by parsing any JSON reference (`$ref`) occurrences to native language dependent reference types.
+[JSON][json] alone can only capture tree structured objects. JSON Reference is a standard way to represent references in JSON documents, to allow graph structured objects to be stored as JSON. Conceptually, JSON Reference extends pure JSON decoders by parsing any JSON reference (`$ref`) occurrences to native language dependent reference types. The following informal diagram futher illustrates the relationship between existing JSON encoder/decoders and JSON Reference:
+
+                                               object
+                                                ___
+                            .-------------.    |   |\     .---------.
+                   .------->| Normalize   |--->|   '-|--->| Encode  |-------.
+                   |        |             |    |     |    |         |       |
+                   |        '-------------'    |_____|    '---------'       |
+                   |                                                        v
+                object                         object                    string
+                 ___                            ___                       ___
+        (\_/)   |   |\      .-------------.    |   |\     .---------.    |   |\
+        (O.o)   |   '-|     | Dereference |    |   '-|    | Decode  |    |   '-|
+        (> <)   |     |<----|             |<---|     |<---|         |<---|     |
+                |_____|     '-------------'    |_____|    '---------'    |_____|
+
 
 This specification defines JSON Reference (or JsonRef) v0.4.0.alpha. JSON Reference v0.4.0 succeeds [JSON Reference v0.3.0][json-ref-v03] and is not entirely backwards compatible. JSON Reference v0.4.0 requires [JSON Pointer v0.4.0][json-pointer].
 
@@ -91,7 +106,7 @@ Every valid JSON Reference document is a valid JSON document. JSON Reference mak
       "b": { "a": { "$ref.607cc3a1c764b": "#a" } }
     }
 
-### references and replacement-values
+### References and replacement-values
 
   - [JSON](https://www.json.org/json-en.html) is built on two "structural" or "container" types:
     - **objects:** *"A collection of name/value pairs. In various languages, this is realized as an object, record, struct, dictionary, hash table, keyed list, or associative array."*
@@ -100,10 +115,10 @@ Every valid JSON Reference document is a valid JSON document. JSON Reference mak
   - JSON Reference implementations must replace references to structural types (arrays and objects) with "native" references (this does not *necessarily* mean native to the programming language, but rather, native to the application). This is called *reference-replacement*.
   - JSON Reference implementations may choose to replace references to non-structural types with references or with copies of the replacement-value. This is called *copy-replacement*. Implementations may choose to make this behavior configurable for non-structural types.
 
-### lazy dereferencing
+### Lazy dereferencing
 Lazy dereferencing of `$ref` objects in a decoded JSON document may be supported. Lazy dereferencing attempts to dereference `$ref` objects "as needed". How "as needed" is defined is dependent on the application. All the above rules still apply. The *only* difference between lazy and canonical (upfront) dereferencing is *when* errors are detected and raised to the client. Implementations that use or support lazy dereferencing should make it clear when, how, and if lazy dereferencing is being performed.
 
-### encoding native references as JSON Reference compatible JSON
+### Normalizing references to JSON encodable objects
 This JSON Reference specification provides no strict guidance on how to encode native objects containing references to JSON Reference compatible JSON documents. Of course, this can still be done. The only requirement is that the resulting JSON uses `$ref` and `$id` consistent with this specification.
 
 ## WHAT JSON REFERENCE IS NOT
@@ -142,7 +157,7 @@ Gives:
       "byref": "bah"
     }
 
-### pointers to pointers
+### Pointers to pointers
 In general circular references are allowed and useful for defining graph like structures - which is the whole point in JSON Reference. However, consider:
 
     {
@@ -174,7 +189,7 @@ Neither document makes sense because they are *vacuous*: the references are expe
 
 In summary, pointers to pointers are fine, but pointers to pointers resulting in a *pure* pointer loop are erroneous. Conceptually, if one can collapse any pointer to pointer chain into an eventual non pointer replacement-value dereferencing should succeed, if not an error must be raised.
 
-### pointers that point *through* other pointers
+### Pointers that point *through* other pointers
 Consider the following document:
 
     {
@@ -189,7 +204,7 @@ Consider the following document:
 
 `#/b/x` points *through* the reference at `#/b`. For this to work, we must ensure `#/b` is resolved before `#/b/x`.
 
-### refs to non-structural types
+### Refs to non-structural types
 This:
 
     {
@@ -208,7 +223,7 @@ Whether `a` and `b` actually reference the same storage location or a copy is im
 
 ---
 
-<p align=center>This page is hosted on <a href='https://github.com/sgpinkus/jsonref.org/'>Github</a></p>
+<p align=center>This page is hosted on <a href='https://github.com/sgpinkus/jsonref.org/'>Github</a>.</p>
 
 [json]: https://www.json.org/json-en.html
 [json-schema]: https://json-schema.org/
