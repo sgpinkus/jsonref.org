@@ -9,7 +9,7 @@
    - [$idProp, $refProp](#idprop-refprop)
    - [References and replacement-values](#references-and-replacement-values)
    - [Lazy dereferencing](#lazy-dereferencing)
-   - [Encoding native references as JSON Reference compatible JSON](#encoding-native-references-as-json-reference-compatible-json)
+   - [Normalizing references to JSON encodable objects](#normalizing-references-to-json-encodable-objects)
 - [WHAT JSON REFERENCE IS NOT](#what-json-reference-is-not)
 - [JSON SCHEMA STYLE JSON REFERENCE CONFORMANCE](#json-schema-style-json-reference-conformance)
 - [NOTES FOR JSON REFERENCE v0.4.0 IMPLEMENTORS](#notes-for-json-reference-v040-implementors)
@@ -47,17 +47,18 @@ Every valid JSON Reference document is a valid JSON document. JSON Reference mak
 
 ### $id
 
-  - The `$id` property is optional on any object. `$id` is used to uniquely identify a sub object within within the scope of a given JSON document.
+  - The `$id` property is optional on any object. `$id` is used to uniquely identify a sub object within the scope of a given JSON document.
   - The `$id` property is analogous to the `name` or `id` [HTML attribute][html-name-attr].
   - `$id` property values must *begin with a letter ([A-Za-z]) and may be followed by any number of letters, digits ([0-9]), hyphens ("-"), underscores ("_"), colons (":"), and periods (".")"*, except in the following case:
-  - To support existing practices, implementations may allow an `$id` occurring at the root of a JSON document, and only the root, to be an absolute URI.
+  - To support existing practices, implementations may allow an `$id` occurring at the root of a JSON document, *and only the root*, to be an absolute URI.
   - `$id` property values are case sensitive.
-  - `$id` property values must be unique within a *JSON document*. Implementations must raise an error if duplicate `$id` values are present.
+  - `$id` property values must be unique within a *JSON document*. Implementations must raise an error if duplicate `$id` values are present within a single JSON Document.
 
 ### $ref
 
   - Objects with a `$ref` property, such as `{ "$ref": <URI> }`, are *entirely replaced* by the value pointed to by `<URI>`. This value is called the *replacement-value*.
   - All other properties of an object containing a `$ref` key *are ignored*.
+  - If a replacement-value cannot be resolved an error must be raised.
   - `<URI>` must be a valid [URI][uri]. Implementations must attempt to resolve the `<URI>` to a *replacement-value* as follows:
   - The fragment identifier component of `<URI>` must be:
     - empty (example: "#", or just ""),
@@ -85,7 +86,6 @@ Every valid JSON Reference document is a valid JSON document. JSON Reference mak
         "d": 2
       }
 
-  - If a replacement-value cannot be resolved an error must be raised.
   - If `<URI>` is not just a fragment identifier component (example: "/some/path#frag"), implementations should first resolve relative URIs against a base URI as described in [RFC 3986][uri], then use the value identified by the absolute URI as the *replacement-value*. How the base URI is determined is beyond the scope of this specification.
   - If a loaded resource refers to all or part of a JSON document, that JSON document must be dereferenced as a standalone document as described above, and resolved to a replacement-value as described above.
   - Implementations *must not* attempt to load remote resources or any resource outside the current JSON document scope by default. In general, implementations should make it clear how and where external values may be retrieved from and require the client to explicitly enable and/or configure this behavior.
@@ -93,7 +93,7 @@ Every valid JSON Reference document is a valid JSON document. JSON Reference mak
 ### $idProp, $refProp
 
   - The `$idProp`, and `$refProp` properties *optionally* allow for different property names to be used for "$id", and "$ref" .
-  - Id set `$idProp`, and `$refProp` must be set on the JSON document root. The property values must be valid JSON property names.
+  - If set, `$idProp` and `$refProp` must be set on the JSON document root. The property values must be valid JSON property names.
   - If not set, the default property names "$id" and "$ref" are used.
   - Example:
 
