@@ -1,4 +1,4 @@
-# JSON REFERENCE v0.4.0.alpha
+# JSON REFERENCE v0.4.0
 
 <!-- MDTOC maxdepth:6 firsth1:2 numbering:0 flatten:0 bullets:1 updateOnSave:1 -->
 
@@ -38,9 +38,7 @@
                 |_____|     '-------------'    |_____|    '---------'    |_____|
 
 
-This specification defines JSON Reference v0.4.0.alpha. JSON Reference v0.4.0 succeeds [JSON Reference v0.3.0][json-ref-v03] and is not entirely backwards compatible. JSON Reference v0.4.0 relies on the [JSON Pointer v0.4.0][json-pointer] specification.
-
-This specification is hosted on [Github](https://github.com/sgpinkus/jsonref.org/).
+This specification defines JSON Reference v0.4.0. JSON Reference v0.4.0 succeeds [JSON Reference v0.3.0][json-ref-v03] and is not entirely backwards compatible. JSON Reference v0.4.0 relies on the [JSON Pointer v0.4.0][json-pointer] specification. This specification is hosted on [Github](https://github.com/sgpinkus/jsonref.org/).
 
 ## SPECIFICATION
 Every valid JSON Reference document is a valid JSON document. JSON Reference makes use of four special object properties meaningful to JSON Reference, but not meaningful to JSON: `$ref`, `$id` and optionally `$refProp`, `$idProp`:
@@ -222,6 +220,18 @@ should give a dereferenced object like:
     }
 
 Whether `a` and `b` actually reference the same storage location or a copy is implementation dependent (as explained above). Implementations may choose to allow the client to configure either behavior.
+
+## ADDENDUM
+
+### Bundling Multiple Documents
+It's often the case that one JSON Reference document will refer to parts of, or all of another document identified by a absolute URI. In such cases it is convenient to distribute all the required documents in a single "bundle". Bundling is also a way to avoid having to load required documents from remote locations at dereferencing time. A suggested solution is to simply bundle multiple documents either:
+
+  - in an JSON array where each value is a document with the top level `$id` field set to the URI of the document.
+  - in a JSON object in which each key is the URI identifying the given document (`$id` need not be specified).
+
+It is upto the implementation to identify and parse such bundles and load resource from the bundle rather than remote resource locations. Clients should be required to explicitly request this loading behaviour.
+
+The above does not imply other bundling and/or local caching solutions are prohibited.
 
 [json]: https://www.json.org/json-en.html
 [json-schema]: https://json-schema.org/
