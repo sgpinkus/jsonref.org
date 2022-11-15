@@ -78,7 +78,7 @@ Every valid JSON Reference document is a valid JSON document. JSON Reference mak
       should give the following after dereferencing:
 
       {
-        "a": { "$id": "a", "b": 1 },
+        "a": { "$id": "x", "b": 1 },
         "b": 2,
         "c": 1
         "d": 2
